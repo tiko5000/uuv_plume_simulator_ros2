@@ -1,3 +1,59 @@
+## This is the ROS2 Port of the uuv_plume_simulator package.
+
+It currently works with ROS2 Humble.
+Main Branch is compatible with Ignition Fortress.
+
+
+### Current Status:
+- Particle Plume is working in ROS2
+
+- Ocean Current from Gazebo is considered in the simulation
+  - Ocean Current is taken from the [hydrodynamics plugin in Gazebo](https://gazebosim.org/api/gazebo/6.9/classignition_1_1gazebo_1_1systems_1_1Hydrodynamics.html)
+- PointCloud2 Bridge to Gazebo
+  - The PointCloud2 is published to the ignition topic /particles2
+
+
+### HowTo.
+
+Start the particle plume
+
+    ros2 service call /create_passive_scalar_turbulent_plume uuv_plume_msgs/srv/CreatePassiveScalarTurbulentPlume "turbulent_diffusion_coefficients: {x: 0.05, y: 0.05, z: 0.05}  
+    source: {x: 0.0, y: 0.0, z: -40.0}  
+    buoyancy_flux: 0.05 
+    stability_param: 0.001 
+    n_points: 100000 
+    max_particles_per_iter: 100 
+    x_min: -200.0 
+    x_max: 200.0 
+    y_min: -75.0 
+    y_max: 75.0 
+    z_min: -50.0 
+    z_max: 0.0 
+    max_life_time: -1"
+
+Start the Ocean Current
+
+    ign topic -t /ocean_current -m ignition.msgs.Vector3d -p 'x: 0.2, y:0, z:0'
+
+### TODO: 
+- Another branch for Gazebo Garden.
+- Particle Visualizer in Gazebo (Currently only works in RViz)
+  - Subscribe to ignition topic /particles2 and publish to /particles as Markers?
+  - https://github.com/gazebosim/gz-sim/tree/gz-sim8/examples/standalone/marker
+  - or use https://github.com/gazebosim/gz-gui/pull/346 (only available from gazebo garden ?)
+- Add a launch file for the plume server
+  - Set initial plume in the simulation 
+- Add a launch file for the current
+  - Set initial Current in Simulation
+-  Port [uuv_cpc_sensor](uuv_cpc_sensor) to ROS2 
+   - is this already done [here](https://github.com/Liquid-ai/Plankton/blob/master/uuv_sensor_plugins/uuv_sensor_ros_plugins/src/CPCROSPlugin.cpp)?
+
+
+---
+
+# Original ReadMe:
+
+
 # Plume Simulator
 
 [![Build Status](https://travis-ci.org/uuvsimulator/uuv_plume_simulator.svg?branch=master)](https://travis-ci.org/uuvsimulator/uuv_plume_simulator)
