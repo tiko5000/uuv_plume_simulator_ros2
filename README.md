@@ -15,6 +15,21 @@ Main Branch is compatible with Ignition Fortress.
 
 ### HowTo.
 
+
+Bridge the Topics:
+    
+    - ros_topic_name: "/ocean_current"
+      gz_topic_name: "/ocean_current"
+      ros_type_name: "geometry_msgs/msg/Point"
+      gz_type_name: "ignition.msgs.Vector3d"
+      direction: GZ_TO_ROS
+
+    - ros_topic_name: "/particles2"
+      gz_topic_name: "/particles2"
+      ros_type_name: "sensor_msgs/msg/PointCloud2"
+      gz_type_name: "ignition.msgs.PointCloudPacked"
+      direction: ROS_TO_GZ
+
 Start the particle plume
 
     ros2 service call /create_passive_scalar_turbulent_plume uuv_plume_msgs/srv/CreatePassiveScalarTurbulentPlume "turbulent_diffusion_coefficients: {x: 0.05, y: 0.05, z: 0.05}  
