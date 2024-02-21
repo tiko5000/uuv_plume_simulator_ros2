@@ -2,12 +2,17 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>uuv_plume_simulator</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="till@todo.todo">till</maintainer>
-  <license>TODO: License declaration</license>
+  <description>ROS2 Port of the Plume simulator package</description>
+  <maintainer email="tiko@uni-bremen.de">Till Koch</maintainer>
+  <author email="tiko@uni-bremen.de">Till Koch</author>
 
-   <buildtool_depend>ament_python</buildtool_depend>
+  <!--  Original ROS1 Package Contact -->
+  <maintainer email="musa.marcusso@de.bosch.com">Musa Morena Marcusso Manhaes</maintainer>
+  <author email="musa.marcusso@de.bosch.com">Musa Morena Marcusso Manhaes</author>
+
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
 
   <depend>rclpy</depend>
 
