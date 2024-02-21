@@ -1,50 +1,48 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(uuv_plume_msgs)
 
-find_package(catkin REQUIRED COMPONENTS
-    std_msgs
-    geometry_msgs
-    geographic_msgs
-    message_generation
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(geographic_msgs REQUIRED)
+
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+    "msg/ParticleConcentration.msg"
+    "msg/Salinity.msg"
+    "srv/CreatePassiveScalarTurbulentPlume.srv"
+    "srv/CreateSpheroidPlume.srv"
+    "srv/SetPlumeLimits.srv"
+    "srv/SetPlumeConfiguration.srv"
+    "srv/GetPlumeConfiguration.srv"
+    "srv/DeletePlume.srv"
+    "srv/SetPlumeSourcePosition.srv"
+    "srv/GetPlumeSourcePosition.srv"
+    "srv/GetNumParticles.srv"
+    "srv/StorePlumeState.srv"
+    "srv/LoadPlumeParticles.srv"
+    "srv/SetCurrentDirection.srv"
+    "srv/SetCurrentModel.srv"
+    "srv/GetCurrentModel.srv"
+    "srv/SetCurrentVelocity.srv"
+    DEPENDENCIES geometry_msgs std_msgs geographic_msgs
 )
 
-add_message_files(
-  FILES
-  ParticleConcentration.msg
-  Salinity.msg
-)
+ament_export_dependencies(rosidl_default_runtime)
 
-add_service_files(
-  FILES
-  CreatePassiveScalarTurbulentPlume.srv
-  CreateSpheroidPlume.srv
-  SetPlumeLimits.srv
-  SetPlumeConfiguration.srv
-  GetPlumeConfiguration.srv
-  DeletePlume.srv
-  SetPlumeSourcePosition.srv
-  GetPlumeSourcePosition.srv
-  GetNumParticles.srv
-  StorePlumeState.srv
-  LoadPlumeParticles.srv
-  SetCurrentDirection.srv
-  SetCurrentModel.srv
-  GetCurrentModel.srv
-  SetCurrentVelocity.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-  geographic_msgs
-)
-
-
-catkin_package(
-    CATKIN_DEPENDS
-      std_msgs
-      geometry_msgs
-      geographic_msgs
-      message_runtime
-)
+ament_package()

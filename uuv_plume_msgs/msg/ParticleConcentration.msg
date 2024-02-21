@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Header header
+std_msgs/Header header
 # Sensor link position wrt the reference frame
 geometry_msgs/Vector3 position
 # WGS84 coordinates (the altitude component corresponds to -1 * depth)
