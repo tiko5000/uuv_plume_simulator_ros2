@@ -421,12 +421,12 @@ class Plume(object):
         if self._pnts is None or self._time_creation is None:
             return None
 
-        pc2 = self.numpy_array_to_point_cloud2(self._pnts, 'world', stamp)
+        pc2 = self.numpy_array_to_point_cloud2('world', stamp)
 
         return pc2
 
     # https://github.com/SebastianGrans/ROS2-Point-Cloud-Demo/blob/master/pcd_demo/pcd_publisher/pcd_publisher_node.py
-    def numpy_array_to_point_cloud2(self, points, parent_frame, stamp):
+    def numpy_array_to_point_cloud2(self, parent_frame, stamp):
         """ Creates a point cloud message.
         Args:
             points: Nx3 array of xyz positions.
@@ -451,13 +451,19 @@ class Plume(object):
         dtype = np.float32
         itemsize = np.dtype(dtype).itemsize  # A 32-bit float takes 4 bytes.
 
-        data = points.astype(dtype).tobytes()
+        # Reshape self._time_creation to have shape (n, 1) so that it can be horizontally stacked with self._pnts
+        time_creation_reshaped = self._time_creation.reshape(-1, 1)
 
+        data = np.hstack((self._pnts, time_creation_reshaped)).astype(dtype).tobytes()
+
+        # Define the point fields (attributes)
         # The fields specify what the bytes represents. The first 4 bytes
         # represents the x-coordinate, the next 4 the y-coordinate, etc.
-        fields = [PointField(
-            name=n, offset=i * itemsize, datatype=ros_dtype, count=1)
-            for i, n in enumerate('xyz')]
+        # https://medium.com/@tonyjacob_/pointcloud2-message-explained-853bd9907743
+        fields = [PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+                  PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+                  PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
+                  PointField(name='time_creation', offset=12, datatype=PointField.FLOAT32, count=1)]
 
         # The PointCloud2 message also has a header which specifies which
         # coordinate frame it is represented in.
@@ -466,12 +472,12 @@ class Plume(object):
         return PointCloud2(
             header=header,
             height=1,
-            width=points.shape[0],
+            width=self._pnts.shape[0],
             is_dense=False,
             is_bigendian=False,
             fields=fields,
-            point_step=(itemsize * 3),  # Every point consists of three float32s.
-            row_step=(itemsize * 3 * points.shape[0]),
+            point_step=(itemsize * 4),  # Every point consists of three float32s.
+            row_step=(itemsize * 4 * self._pnts.shape[0]),
             data=data
         )
 
