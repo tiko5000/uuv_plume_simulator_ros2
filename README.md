@@ -36,6 +36,8 @@ Bridge the Topics:
       gz_type_name: "gz.msgs.Float_V"
       direction: ROS_TO_GZ
 
+    - ros2 run ros_gz_bridge parameter_bridge /particles2@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked /ocean_current@geometry_msgs/msg/Point@gz.msgs.Vector3d /time_creation@ros_gz_interfaces/msg/Float32Array@gz.msgs.Float_V
+
 Start the particle plume
 
     ros2 service call /create_passive_scalar_turbulent_plume uuv_plume_msgs/srv/CreatePassiveScalarTurbulentPlume "turbulent_diffusion_coefficients: {x: 0.05, y: 0.05, z: 0.05}  
@@ -54,7 +56,7 @@ Start the particle plume
 
 Start the Ocean Current
 
-    ign topic -t /ocean_current -m gz.msgs.Vector3d -p 'x: 0.2, y:0, z:0'
+    gz topic -t /ocean_current -m gz.msgs.Vector3d -p 'x: 0.2, y:0, z:0'
 
 ### TODO: 
 - Another branch for Gazebo Garden.
