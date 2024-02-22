@@ -256,7 +256,7 @@ from __future__ import print_function
 
 import sys
 
-# import rospy
+from ros_gz_interfaces.msg import Float32Array
 from sensor_msgs.msg import PointCloud, PointCloud2
 from visualization_msgs.msg import MarkerArray
 from geometry_msgs.msg import Point
@@ -397,6 +397,13 @@ class PlumeSimulatorServer(Node):
             LoadPlumeParticles,
             'load_plume_particles',
             self.load_plume_particles)
+
+        # Publisher for the time_creation values of the plume particles
+        # This is only used for Bridging it into gazebo so the plume can be visualized in gazebo as PointCloud
+        self._plume_time_creation_publisher = self.create_publisher(
+            Float32Array,
+            'time_creation',
+            1)
 
         # Publisher for the plume visual markers
         self._plume_marker_publisher = self.create_publisher(
@@ -745,6 +752,10 @@ class PlumeSimulatorServer(Node):
         pc2_msg = self._model.get_point_cloud2_as_msg(stamp=self.get_clock().now().to_msg())
         if pc2_msg is not None:
             self._plume_point_cloud2_publisher.publish(pc2_msg)
+
+        time_of_creation = self._model.time_of_creation
+        if time_of_creation is not None:
+            self._plume_time_creation_publisher.publish(Float32Array(data=time_of_creation.flatten().tolist()))
 
         self._loading_plume.release()
         return True

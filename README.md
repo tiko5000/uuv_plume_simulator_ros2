@@ -30,6 +30,12 @@ Bridge the Topics:
       gz_type_name: "ignition.msgs.PointCloudPacked"
       direction: ROS_TO_GZ
 
+    - ros_topic_name: "/time_creation"
+      gz_topic_name: "/time_creation"
+      ros_type_name: "ros_gz_interfaces/msg/Float32Array"
+      gz_type_name: "gz.msgs.Float_V"
+      direction: ROS_TO_GZ
+
 Start the particle plume
 
     ros2 service call /create_passive_scalar_turbulent_plume uuv_plume_msgs/srv/CreatePassiveScalarTurbulentPlume "turbulent_diffusion_coefficients: {x: 0.05, y: 0.05, z: 0.05}  
