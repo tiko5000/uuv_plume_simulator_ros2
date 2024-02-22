@@ -1,7 +1,7 @@
 ## This is the ROS2 Port of the uuv_plume_simulator package.
 
 It currently works with ROS2 Humble.
-Main Branch is compatible with Ignition Fortress.
+Main Branch is compatible with Gazebo Garden.
 
 
 ### Current Status:
@@ -10,7 +10,7 @@ Main Branch is compatible with Ignition Fortress.
 - Ocean Current from Gazebo is considered in the simulation
   - Ocean Current is taken from the [hydrodynamics plugin in Gazebo](https://gazebosim.org/api/gazebo/6.9/classignition_1_1gazebo_1_1systems_1_1Hydrodynamics.html)
 - PointCloud2 Bridge to Gazebo
-  - The PointCloud2 is published to the ignition topic /particles2
+  - The PointCloud2 is published to the gz topic /particles2
 
 
 ### HowTo.
@@ -21,13 +21,13 @@ Bridge the Topics:
     - ros_topic_name: "/ocean_current"
       gz_topic_name: "/ocean_current"
       ros_type_name: "geometry_msgs/msg/Point"
-      gz_type_name: "ignition.msgs.Vector3d"
+      gz_type_name: "gz.msgs.Vector3d"
       direction: GZ_TO_ROS
 
     - ros_topic_name: "/particles2"
       gz_topic_name: "/particles2"
       ros_type_name: "sensor_msgs/msg/PointCloud2"
-      gz_type_name: "ignition.msgs.PointCloudPacked"
+      gz_type_name: "gz.msgs.PointCloudPacked"
       direction: ROS_TO_GZ
 
     - ros_topic_name: "/time_creation"
@@ -54,12 +54,12 @@ Start the particle plume
 
 Start the Ocean Current
 
-    ign topic -t /ocean_current -m ignition.msgs.Vector3d -p 'x: 0.2, y:0, z:0'
+    ign topic -t /ocean_current -m gz.msgs.Vector3d -p 'x: 0.2, y:0, z:0'
 
 ### TODO: 
 - Another branch for Gazebo Garden.
 - Particle Visualizer in Gazebo (Currently only works in RViz)
-  - Subscribe to ignition topic /particles2 and publish to /particles as Markers?
+  - Subscribe to gz topic /particles2 and publish to /particles as Markers?
   - https://github.com/gazebosim/gz-sim/tree/gz-sim8/examples/standalone/marker
   - or use https://github.com/gazebosim/gz-gui/pull/346 (only available from gazebo garden ?)
 - Add a launch file for the plume server
