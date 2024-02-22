@@ -2,6 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>uuv_plume_simulator</name>
+  <version>2.0.0</version>
   <description>ROS2 Port of the Plume simulator package</description>
   <maintainer email="tiko@uni-bremen.de">Till Koch</maintainer>
   <author email="tiko@uni-bremen.de">Till Koch</author>
