@@ -308,12 +308,74 @@ class PlumeSimulatorServer(Node):
         self._dt = 0.0
 
         # Update rate for the current plume state
+        # And define more parameters
         self._update_rate = 5.0
+        self._gamma = 0.001
+        self._gain = 1.0
+        self._radius = 3.0        
+        self._saturation = 0.0
+        self._noise_amplitude = 0.0
+        self._noise_sigma = 1.0
+        self._latitude = 100.0
+        self._longitude = 100.0
+        self._salinity_unit = "ppm"
+        self._reference_salinity_value = 0.0
+        self._use_geo_coordinates = False
+        self._use_odom = False
+        self._use_gps = False
+        self._publish_salinity = True
 
-        self._update_rate = float(self.declare_parameter('~update_rate', self._update_rate).value)
+        # Declare parameters
+        self._update_rate = float(self.declare_parameter('update_rate', self._update_rate).value)
+        self._gamma = float(self.declare_parameter('gamma', self._gamma).value)
+        self._gain = float(self.declare_parameter('gain', self._gain).value)
+        self._radius = float(self.declare_parameter('radius', self._radius).value)
+        self._saturation = float(self.declare_parameter('saturation', self._saturation).value)
+        self._noise_amplitude = float(self.declare_parameter('noise_amplitude', self._noise_amplitude).value)
+        self._noise_sigma = float(self.declare_parameter('noise_sigma', self._noise_sigma).value)
+        self._latitude = float(self.declare_parameter('latitude', self._latitude).value)
+        self._longitude = float(self.declare_parameter('longitude', self._longitude).value)
+        self._reference_salinity_value = float(self.declare_parameter('reference_salinity_value', self._reference_salinity_value).value)
+        self._salinity_unit = str(self.declare_parameter('salinity_unit', self._salinity_unit).value)
+        self._use_geo_coordinates = bool(self.declare_parameter('use_geo_coordinates', self._use_geo_coordinates).value)
+        self._use_odom = bool(self.declare_parameter('use_odom', self._use_odom).value)
+        self._use_gps = bool(self.declare_parameter('use_gps', self._use_gps).value)
+        self._publish_salinity = bool(self.declare_parameter('publish_salinity', self._publish_salinity).value)
+
+        # Assert the delcared parameters
         assert isinstance(self._update_rate, float), 'port parameter must be a float'
+        assert isinstance(self._gamma, float), 'port parameter must be a float'
+        assert isinstance(self._gain, float), 'port parameter must be a float'
+        assert isinstance(self._radius, float), 'port parameter must be a float'
+        assert isinstance(self._saturation, float), 'port parameter must be a float'
+        assert isinstance(self._noise_amplitude, float), 'port parameter must be a float'
+        assert isinstance(self._noise_sigma, float), 'port parameter must be a float'
+        assert isinstance(self._latitude, float), 'port parameter must be a float'
+        assert isinstance(self._longitude, float), 'port parameter must be a float'
+        assert isinstance(self._reference_salinity_value, float), 'port parameter must be a float'
+        assert isinstance(self._salinity_unit, str), 'port parameter must be a float'
+        assert isinstance(self._use_geo_coordinates, bool), 'port parameter must be a boolean'
+        assert isinstance(self._use_odom, bool), 'port parameter must be a float'
+        assert isinstance(self._use_gps, bool), 'port parameter must be a float'
+        assert isinstance(self._publish_salinity, bool), 'port parameter must be a float'
+
+        # Log the parameters
         self._update_rate = max(0.05, self._update_rate)
         self.get_logger().info(f'Update rate [Hz]: {format(self._update_rate, ".3f")}')
+        self.get_logger().info(f'Gamma : {format(self._gamma, ".3f")}')
+        self.get_logger().info(f'Gain : {format(self._gain, ".3f")}')
+        self.get_logger().info(f'Radius of Plume : {format(self._radius, ".3f")}')
+        self.get_logger().info(f'Saturation : {format(self._saturation, ".3f")}')
+        self.get_logger().info(f'Noise Amplitude : {format(self._noise_amplitude, ".3f")}')
+        self.get_logger().info(f'Noise Variance : {format(self._noise_sigma, ".3f")}')
+        self.get_logger().info(f'Plume Latitude : {format(self._latitude, ".3f")}')
+        self.get_logger().info(f'Plume Longitude : {format(self._longitude, ".3f")}')
+        self.get_logger().info(f'Reference Salinity Value : {format(self._reference_salinity_value, ".3f")}')
+        self.get_logger().info(f'salinity_unit: {self._salinity_unit}')
+        self.get_logger().info(f'useGeoCoordinates [Boolean]: {self._use_geo_coordinates}')
+        self.get_logger().info(f'useOdometry [Boolean]: {self._use_odom}')
+        self.get_logger().info(f'useGPS [Boolean]: {self._use_gps}')
+        self.get_logger().info(f'Publish Salinity [Boolean]: {self._publish_salinity}')
 
         # Definition of service callbacks
         # self._services = dict()
