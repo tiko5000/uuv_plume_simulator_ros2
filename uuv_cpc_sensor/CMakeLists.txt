@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(uuv_cpc_sensor2)
+project(uuv_cpc_sensor)
 
 # ## Compile as C++11, supported in ROS Kinetic and newer
 # set(CMAKE_CXX_STANDARD 11)
