@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>uuv_cpc_sensor2</name>
+  <version>0.0.0</version>
+  <description>The uuv_cpc_sensor package.</description>
+  <maintainer email="raunak@uni-bremen.de">Raunak Kulkarni</maintainer>
+  <author email="raunak@uni-bremen.de">Raunak Kulkarni</author>
+
+  <!-- Original ROS1 Package Contact -->
+  <maintainer email="musa.marcusso@de.bosch.com">Musa Morena Marcusso Manhaes</maintainer>
+  <author email="musa.marcusso@de.bosch.com">Musa Morena Marcusso Manhaes</author>
+
+  <license>Apache-2.0</license>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>tf2_ros</build_depend>
+
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_msgs</depend>
+  <depend>uuv_plume_msgs</depend>
+  <depend>geographiclib</depend>
+
+  <!-- <exec_depend>rclcpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>uuv_plume_msgs</exec_depend> -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
