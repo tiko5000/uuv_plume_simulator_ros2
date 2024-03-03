@@ -16,7 +16,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        # (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         # (os.path.join('share', package_name, 'uuv_plume_simulator', 'uuv_gm_process'), glob('uuv_plume_simulator/uuv_gm_process/*.py')),
         # (os.path.join('share', package_name, 'uuv_plume_simulator', 'uuv_plume_model'), glob('uuv_plume_simulator/uuv_plume_model/*.py')),
     ],

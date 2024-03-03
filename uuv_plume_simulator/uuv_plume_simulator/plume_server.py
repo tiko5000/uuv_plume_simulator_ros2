@@ -307,12 +307,11 @@ class PlumeSimulatorServer(Node):
         # self._t = self.get_clock().now() # https://github.com/mikeferguson/ros2_cookbook/blob/main/rclpy/time.md
         self._dt = 0.0
 
-        # Update rate for the current plume state
-        # And define more parameters
+        # Define default values for the parameters
         self._update_rate = 5.0
         self._gamma = 0.001
         self._gain = 1.0
-        self._radius = 3.0        
+        self._radius = 3.0
         self._saturation = 0.0
         self._noise_amplitude = 0.0
         self._noise_sigma = 1.0

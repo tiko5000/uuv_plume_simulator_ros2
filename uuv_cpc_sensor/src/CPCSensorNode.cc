@@ -116,7 +116,7 @@ private:
 
         double initSmoothingLength = std::pow(this->smoothingLength, 2.0 / 3); 
 
-        RCLCPP_INFO(get_logger(), "Starting to Parse the PointCloud2 Msg ...");
+        RCLCPP_DEBUG(get_logger(), "Starting to Parse the PointCloud2 Msg ...");
 
         // Now create iterators for fields
         sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
@@ -203,7 +203,7 @@ private:
 
     void OnSensorUpdate()
     {
-        RCLCPP_INFO(get_logger(), "Inside OnSensorUpdate ...");                
+        RCLCPP_DEBUG(get_logger(), "Inside OnSensorUpdate ...");
         if (!this->areParticlesInit)
             return;
         this->concentration_publisher_->publish(this->concentrationMsg);
@@ -215,7 +215,7 @@ public:    void getParametersFromOtherNode()
     {
         // Create a parameter client to communicate with the other node
         // https://github.com/ros2/rclcpp/blob/fdaf96f2171e70f3e013610aa44df2d7e9c866a3/rclcpp/include/rclcpp/parameter_client.hpp
-        auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(this,"PlumeSimulatorServer");
+        auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(this,"plume_server_node");
 
         // Wait for the parameter service of the other node to be available
         while (!parameter_client->wait_for_service(std::chrono::seconds(1))) {
