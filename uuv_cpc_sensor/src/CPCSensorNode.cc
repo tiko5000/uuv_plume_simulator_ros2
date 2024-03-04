@@ -56,8 +56,7 @@ private:
         {
             // Read the current position of the sensor frame
             geometry_msgs::msg::TransformStamped childTransform;
-            // std::string targetFrame = msg->header.frame_id;
-            std::string targetFrame ="world";
+            std::string targetFrame = msg->header.frame_id;
             std::string sourceFrame = this->sensorFrameID;
             try
             {
@@ -316,7 +315,7 @@ public:    void getParametersFromOtherNode()
             // TODO: Publish a sensor frame ID
             if(parameter_client->has_parameter("sensor_frame_id"))
             this->sensorFrameID = parameter_client->get_parameter<std::string>("sensor_frame_id");
-            RCLCPP_INFO(get_logger(),"Using the a frame ID %s as input for sensor position", this->sensorFrameID.c_str());
+            RCLCPP_INFO(get_logger(),"Using the frame ID %s as input for sensor position", this->sensorFrameID.c_str());
         }
 
         if(parameter_client->has_parameter("publish_salinity"))
@@ -407,7 +406,7 @@ private:
     protected: double updateRate;
 
     /// \brief Name of the sensor frame
-    protected: std::string sensorFrameID = "base_link";
+    protected: std::string sensorFrameID; // = "base_link";
 
     /// \brief Flag set to true after the first set of plume particles is
     /// received
