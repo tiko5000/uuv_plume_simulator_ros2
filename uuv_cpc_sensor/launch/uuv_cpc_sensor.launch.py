@@ -60,9 +60,6 @@ def generate_launch_description():
     salinity_unit = LaunchConfiguration('salinity_unit')
     salinity_unit_launch_arg = DeclareLaunchArgument('salinity_unit', default_value='ppt')
 
-    sensor_frame_id = LaunchConfiguration('sensor_frame_id')
-    sensor_frame_id_launch_arg = DeclareLaunchArgument('sensor_frame_id', default_value='base_link')
-
     publish_salinity = LaunchConfiguration('publish_salinity')
     publish_salinity_launch_arg = DeclareLaunchArgument('publish_salinity', default_value='true')
 
@@ -85,7 +82,6 @@ def generate_launch_description():
         use_geo_coordinates_launch_arg,
         reference_salinity_value_launch_arg,
         salinity_unit_launch_arg,
-        sensor_frame_id_launch_arg,
         publish_salinity_launch_arg,
         use_odom_launch_arg,
         use_gps_launch_arg,
@@ -108,7 +104,6 @@ def generate_launch_description():
                     "use_geo_coordinates": use_geo_coordinates,
                     "reference_salinity_value": reference_salinity_value,
                     "salinity_unit": salinity_unit,
-                    "sensor_frame_id": sensor_frame_id,
                     "publish_salinity": publish_salinity,
                     "use_odom": use_odom,
                     "use_gps": use_gps}
