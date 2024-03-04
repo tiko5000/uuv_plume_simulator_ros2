@@ -323,6 +323,8 @@ class PlumeSimulatorServer(Node):
         self._use_odom = False
         self._use_gps = False
         self._publish_salinity = True
+        self._pointcloud_frame_id = 'world'
+        self._sensor_frame_id = 'base_link'
 
         # Declare parameters
         self._update_rate = float(self.declare_parameter('update_rate', self._update_rate).value)
@@ -340,6 +342,8 @@ class PlumeSimulatorServer(Node):
         self._use_odom = bool(self.declare_parameter('use_odom', self._use_odom).value)
         self._use_gps = bool(self.declare_parameter('use_gps', self._use_gps).value)
         self._publish_salinity = bool(self.declare_parameter('publish_salinity', self._publish_salinity).value)
+        self._pointcloud_frame_id = str(self.declare_parameter('pointcloud_frame_id', self._pointcloud_frame_id).value)
+        self._sensor_frame_id = str(self.declare_parameter('sensor_frame_id', self._sensor_frame_id).value)
 
         # Assert the delcared parameters
         assert isinstance(self._update_rate, float), 'port parameter must be a float'
@@ -357,6 +361,8 @@ class PlumeSimulatorServer(Node):
         assert isinstance(self._use_odom, bool), 'port parameter must be a float'
         assert isinstance(self._use_gps, bool), 'port parameter must be a float'
         assert isinstance(self._publish_salinity, bool), 'port parameter must be a float'
+        assert isinstance(self._pointcloud_frame_id, str), 'frame_id parameter must be a string'
+        assert isinstance(self._sensor_frame_id, str), 'sensor_frame_id parameter must be a string'
 
         # Log the parameters
         self._update_rate = max(0.05, self._update_rate)
@@ -375,6 +381,8 @@ class PlumeSimulatorServer(Node):
         self.get_logger().info(f'useOdometry [Boolean]: {self._use_odom}')
         self.get_logger().info(f'useGPS [Boolean]: {self._use_gps}')
         self.get_logger().info(f'Publish Salinity [Boolean]: {self._publish_salinity}')
+        self.get_logger().info(f'Pointcloud Frame ID: {self._pointcloud_frame_id}')
+        self.get_logger().info(f'Sensor Frame ID: {self._sensor_frame_id}')
 
         # Definition of service callbacks
         # self._services = dict()
@@ -777,40 +785,39 @@ class PlumeSimulatorServer(Node):
         if self._dt <= rclpy.duration.Duration(seconds=0.0):
             return True
 
+        now_msg = self.get_clock().now().to_msg()
+
         if self._model is None:
             marker = MarkerArray()
             self._plume_marker_publisher.publish(marker)
             pc_msg = PointCloud()
-            pc_msg.header.stamp = self.get_clock().now().to_msg()
-            pc_msg.header.frame_id = 'world'
+            pc_msg.header.stamp = now_msg
+            pc_msg.header.frame_id = self._pointcloud_frame_id
             self._plume_point_cloud_publisher.publish(pc_msg)
 
             pc2_msg = PointCloud2()
-            pc2_msg.header.stamp = self.get_clock().now().to_msg()
-            pc2_msg.header.frame_id = 'world'
+            pc2_msg.header.stamp = now_msg
+            pc2_msg.header.frame_id = self._pointcloud_frame_id
             self._plume_point_cloud2_publisher.publish(pc2_msg)
 
             self._loading_plume.release()
             return True
-
-        now = self.get_clock().now()
-        msg = self.get_clock().now().to_msg()
 
         if not self._model.update(float(self.get_clock().now().nanoseconds)/1000000000):
             self.get_logger().error('Error while updating the plume particles positions')
             self._loading_plume.release()
             return True
 
-        marker = self._model.get_markers(stamp=self.get_clock().now().to_msg())
+        marker = self._model.get_markers(stamp=now_msg)
 
         if marker is not None:
             self._plume_marker_publisher.publish(marker)
 
-        pc_msg = self._model.get_point_cloud_as_msg(stamp=self.get_clock().now().to_msg())
+        pc_msg = self._model.get_point_cloud_as_msg(stamp=now_msg)
         if pc_msg is not None:
             self._plume_point_cloud_publisher.publish(pc_msg)
 
-        pc2_msg = self._model.get_point_cloud2_as_msg(stamp=self.get_clock().now().to_msg())
+        pc2_msg = self._model.get_point_cloud2_as_msg(stamp=now_msg)
         if pc2_msg is not None:
             self._plume_point_cloud2_publisher.publish(pc2_msg)
 
