@@ -165,7 +165,7 @@ private:
 
             // Calculating salinity
             this->salinityMsg.salinity = this->referenceSalinityValue * \
-                (this->saturation - this->concentrationMsg.concentration) + \
+                (this->saturation - std::min(1.0, this->concentrationMsg.concentration)) + \
                 this->concentrationMsg.concentration * this->plumeSalinityValue;
 
             // Adding noise to the salinity value

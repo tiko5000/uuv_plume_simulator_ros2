@@ -313,7 +313,7 @@ class PlumeSimulatorServer(Node):
         self._gamma = 0.001
         self._gain = 1.0
         self._radius = 3.0        
-        self._saturation = 0.0
+        self._saturation = 1.0
         self._noise_amplitude = 0.0
         self._noise_sigma = 1.0
         self._latitude = 100.0
