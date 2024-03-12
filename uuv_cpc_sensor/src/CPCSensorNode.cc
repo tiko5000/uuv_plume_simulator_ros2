@@ -76,7 +76,6 @@ private:
         }
 
         this->concentrationMsg.header.frame_id = msg->header.frame_id;
-        // this->concentrationMsg.header.stamp = this->now();
         this->concentrationMsg.header.stamp.sec = this->now().seconds();
         this->concentrationMsg.header.stamp.nanosec = this->now().nanoseconds();
 
@@ -132,7 +131,6 @@ private:
                 std::pow(*iter_y - this->cartPos.y, 2) +
                 std::pow(*iter_z - this->cartPos.z, 2));
 
-            // Todo currentTime - _msg->channels[0].values[i]
             smoothingParam = std::pow(initSmoothingLength +
                 this->gamma * (currentTime - *iter_time_creation), 1.5);
 
@@ -157,7 +155,6 @@ private:
         if (this->publishSalinity)
         {
             this->salinityMsg.header.frame_id = msg->header.frame_id;
-            // this->salinityMsg.header.stamp = this->now();
             this->salinityMsg.header.stamp.sec = this->now().seconds();
             this->salinityMsg.header.stamp.nanosec = this->now().nanoseconds();            
             this->salinityMsg.position = this->concentrationMsg.position;
@@ -353,18 +350,6 @@ private:
 
     /// \brief Output topic for salinity
     rclcpp::Publisher<uuv_plume_msgs::msg::Salinity>::SharedPtr salinity_publisher_;
-
-    /// \brief Update the output concentration and salinity topics
-    // protected: void OnSensorUpdate();
-
-    /// \brief Update callback from the plume particles
-    // protected: void OnPlumeParticlesUpdate(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-
-    /// \brief Update the odometry callback
-    // protected:  void OnOdometryUpdate(const nav_msgs::msg::Odometry::SharedPtr msg);
-
-    /// \brief Update the GPS update callback
-    // protected: void OnGPSUpdate(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
 
     /// \brief Flag to ensure the cloud and measurement update don't coincide
     protected: bool updatingCloud = false;
