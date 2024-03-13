@@ -69,6 +69,9 @@ def generate_launch_description():
     use_gps = LaunchConfiguration('use_gps')
     use_gps_launch_arg = DeclareLaunchArgument('use_gps', default_value='false')
 
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time_launch_arg = DeclareLaunchArgument('use_sim_time', default_value='true')
+
     return LaunchDescription([
         uuv_name_launch_arg,
         latitude_ref_launch_arg,
@@ -85,6 +88,7 @@ def generate_launch_description():
         publish_salinity_launch_arg,
         use_odom_launch_arg,
         use_gps_launch_arg,
+        use_sim_time_launch_arg,
         Node(
             package="uuv_cpc_sensor",
             executable="uuv_cpc_ros_sensor_node",
@@ -106,7 +110,8 @@ def generate_launch_description():
                     "salinity_unit": salinity_unit,
                     "publish_salinity": publish_salinity,
                     "use_odom": use_odom,
-                    "use_gps": use_gps}
+                    "use_gps": use_gps,
+                    "use_sim_time": use_sim_time}
             ]
         )
     ])
