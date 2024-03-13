@@ -20,7 +20,7 @@ find_package(rcpputils REQUIRED)
 
 # Geographiclib installs FindGeographicLib.cmake to this non-standard location
 # Hint from: https://github.com/cra-ros-pkg/robot_localization/blob/humble-devel/CMakeLists.txt
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
 find_package(GeographicLib REQUIRED)
 
 include_directories(
@@ -70,6 +70,13 @@ ament_export_dependencies(
   geometry_msgs
   uuv_plume_msgs
 )
+
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 ament_package()
 
 
