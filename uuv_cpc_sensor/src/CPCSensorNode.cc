@@ -56,8 +56,7 @@ private:
         {
             // Read the current position of the sensor frame
             geometry_msgs::msg::TransformStamped childTransform;
-            // std::string targetFrame = msg->header.frame_id;
-            std::string targetFrame ="map";
+            std::string targetFrame = this->pointcloud2FrameID;
             std::string sourceFrame = this->sensorFrameID;
             try
             {
@@ -115,7 +114,7 @@ private:
 
         double initSmoothingLength = std::pow(this->smoothingLength, 2.0 / 3); 
 
-        RCLCPP_INFO(get_logger(), "Starting to Parse the PointCloud2 Msg ...");
+        RCLCPP_DEBUG(get_logger(), "Starting to Parse the PointCloud2 Msg ...");
 
         // Now create iterators for fields
         sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
@@ -201,7 +200,7 @@ private:
 
     void OnSensorUpdate()
     {
-        RCLCPP_INFO(get_logger(), "Inside OnSensorUpdate ...");                
+        RCLCPP_DEBUG(get_logger(), "Inside OnSensorUpdate ...");
         if (!this->areParticlesInit)
             return;
         this->concentration_publisher_->publish(this->concentrationMsg);
@@ -213,7 +212,7 @@ public:    void getParametersFromOtherNode()
     {
         // Create a parameter client to communicate with the other node
         // https://github.com/ros2/rclcpp/blob/fdaf96f2171e70f3e013610aa44df2d7e9c866a3/rclcpp/include/rclcpp/parameter_client.hpp
-        auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(this,"PlumeSimulatorServer");
+        auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(this,"plume_server_node");
 
         // Wait for the parameter service of the other node to be available
         while (!parameter_client->wait_for_service(std::chrono::seconds(1))) {
@@ -314,7 +313,10 @@ public:    void getParametersFromOtherNode()
             // TODO: Publish a sensor frame ID
             if(parameter_client->has_parameter("sensor_frame_id"))
             this->sensorFrameID = parameter_client->get_parameter<std::string>("sensor_frame_id");
-            RCLCPP_INFO(get_logger(),"Using the a frame ID %s as input for sensor position", this->sensorFrameID.c_str());
+            RCLCPP_INFO(get_logger(),"Using the frame ID %s as input for sensor position", this->sensorFrameID.c_str());
+            if(parameter_client->has_parameter("pointcloud_frame_id"))
+            this->pointcloud2FrameID = parameter_client->get_parameter<std::string>("pointcloud_frame_id");
+            RCLCPP_INFO(get_logger(),"Using the frame ID %s as input for pointcloud2 to be measured", this->pointcloud2FrameID.c_str());
         }
 
         if(parameter_client->has_parameter("publish_salinity"))
@@ -393,7 +395,10 @@ private:
     protected: double updateRate;
 
     /// \brief Name of the sensor frame
-    protected: std::string sensorFrameID = "wamv/wamv/base_link";
+    protected: std::string sensorFrameID; // = "wamv/wamv/base_link";
+
+    /// \brief Name of the sensor frame
+    protected: std::string pointcloud2FrameID; // by default it is "world"    
 
     /// \brief Flag set to true after the first set of plume particles is
     /// received
