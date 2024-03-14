@@ -56,7 +56,7 @@ private:
         {
             // Read the current position of the sensor frame
             geometry_msgs::msg::TransformStamped childTransform;
-            std::string targetFrame = msg->header.frame_id;
+            std::string targetFrame = this->pointcloud2FrameID;
             std::string sourceFrame = this->sensorFrameID;
             try
             {
@@ -75,7 +75,6 @@ private:
         }
 
         this->concentrationMsg.header.frame_id = msg->header.frame_id;
-        // this->concentrationMsg.header.stamp = this->now();
         this->concentrationMsg.header.stamp.sec = this->now().seconds();
         this->concentrationMsg.header.stamp.nanosec = this->now().nanoseconds();
 
@@ -121,8 +120,9 @@ private:
         sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
         sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
         sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
+        sensor_msgs::PointCloud2Iterator<float> iter_time_creation(*msg, "time_creation");
 
-        for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
+        for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_time_creation)
         {
             // Compute the distance to the sensor
             distToParticle = std::sqrt(
@@ -130,9 +130,8 @@ private:
                 std::pow(*iter_y - this->cartPos.y, 2) +
                 std::pow(*iter_z - this->cartPos.z, 2));
 
-            // Todo currentTime - _msg->channels[0].values[i]
             smoothingParam = std::pow(initSmoothingLength +
-                this->gamma * (currentTime), 1.5);
+                this->gamma * (currentTime - *iter_time_creation), 1.5);
 
             // Compute particle concentration
             if (distToParticle >= 0 && distToParticle < smoothingParam)
@@ -155,7 +154,6 @@ private:
         if (this->publishSalinity)
         {
             this->salinityMsg.header.frame_id = msg->header.frame_id;
-            // this->salinityMsg.header.stamp = this->now();
             this->salinityMsg.header.stamp.sec = this->now().seconds();
             this->salinityMsg.header.stamp.nanosec = this->now().nanoseconds();            
             this->salinityMsg.position = this->concentrationMsg.position;
@@ -163,7 +161,7 @@ private:
 
             // Calculating salinity
             this->salinityMsg.salinity = this->referenceSalinityValue * \
-                (this->saturation - this->concentrationMsg.concentration) + \
+                (this->saturation - std::min(1.0, this->concentrationMsg.concentration)) + \
                 this->concentrationMsg.concentration * this->plumeSalinityValue;
 
             // Adding noise to the salinity value
@@ -316,6 +314,9 @@ public:    void getParametersFromOtherNode()
             if(parameter_client->has_parameter("sensor_frame_id"))
             this->sensorFrameID = parameter_client->get_parameter<std::string>("sensor_frame_id");
             RCLCPP_INFO(get_logger(),"Using the frame ID %s as input for sensor position", this->sensorFrameID.c_str());
+            if(parameter_client->has_parameter("pointcloud_frame_id"))
+            this->pointcloud2FrameID = parameter_client->get_parameter<std::string>("pointcloud_frame_id");
+            RCLCPP_INFO(get_logger(),"Using the frame ID %s as input for pointcloud2 to be measured", this->pointcloud2FrameID.c_str());
         }
 
         if(parameter_client->has_parameter("publish_salinity"))
@@ -351,18 +352,6 @@ private:
 
     /// \brief Output topic for salinity
     rclcpp::Publisher<uuv_plume_msgs::msg::Salinity>::SharedPtr salinity_publisher_;
-
-    /// \brief Update the output concentration and salinity topics
-    // protected: void OnSensorUpdate();
-
-    /// \brief Update callback from the plume particles
-    // protected: void OnPlumeParticlesUpdate(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-
-    /// \brief Update the odometry callback
-    // protected:  void OnOdometryUpdate(const nav_msgs::msg::Odometry::SharedPtr msg);
-
-    /// \brief Update the GPS update callback
-    // protected: void OnGPSUpdate(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
 
     /// \brief Flag to ensure the cloud and measurement update don't coincide
     protected: bool updatingCloud = false;
@@ -406,7 +395,10 @@ private:
     protected: double updateRate;
 
     /// \brief Name of the sensor frame
-    protected: std::string sensorFrameID; // = "base_link";
+    protected: std::string sensorFrameID; // = "wamv/wamv/base_link";
+
+    /// \brief Name of the sensor frame
+    protected: std::string pointcloud2FrameID; // by default it is "world"    
 
     /// \brief Flag set to true after the first set of plume particles is
     /// received

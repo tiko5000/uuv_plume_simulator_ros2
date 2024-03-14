@@ -312,13 +312,13 @@ class PlumeSimulatorServer(Node):
         self._gamma = 0.001
         self._gain = 1.0
         self._radius = 3.0
-        self._saturation = 0.0
+        self._saturation = 1.0
         self._noise_amplitude = 0.0
         self._noise_sigma = 1.0
         self._latitude = 100.0
         self._longitude = 100.0
         self._salinity_unit = "ppm"
-        self._reference_salinity_value = 0.0
+        self._reference_salinity_value = 35000.0
         self._use_geo_coordinates = False
         self._use_odom = False
         self._use_gps = False

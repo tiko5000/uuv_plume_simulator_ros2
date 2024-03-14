@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 project(uuv_cpc_sensor)
 
-# ## Compile as C++11, supported in ROS Kinetic and newer
-# set(CMAKE_CXX_STANDARD 11)
-
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -32,20 +29,6 @@ include_directories(
   ${GeographicLib_INCLUDE_DIRS}
 )
 
-
-# ## Build libraries
-# add_library(uuv_cpc_ros_sensor SHARED
-#   src/CPCSensor.cc
-# )
-# ament_target_dependencies(uuv_cpc_ros_sensor
-#   rclcpp
-#   std_msgs
-#   nav_msgs
-#   sensor_msgs
-#   geometry_msgs
-#   uuv_plume_msgs
-# )
-
 ## Build executables
 add_executable(uuv_cpc_ros_sensor_node
   src/CPCSensorNode.cc
@@ -62,13 +45,9 @@ ament_target_dependencies(uuv_cpc_ros_sensor_node
   uuv_plume_msgs
   GeographicLib
 )
-# target_link_libraries(uuv_cpc_ros_sensor_node
-#   uuv_cpc_ros_sensor
-# )
 
 ## Install targets
 install(TARGETS
-  # uuv_cpc_ros_sensor
   uuv_cpc_ros_sensor_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -82,11 +61,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".~" EXCLUDE
 )
 
-install(
-  DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}
-)
-
 ament_export_include_directories(include)
 ament_export_dependencies(
   rclcpp
@@ -96,6 +70,13 @@ ament_export_dependencies(
   geometry_msgs
   uuv_plume_msgs
 )
+
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 ament_package()
 
 
