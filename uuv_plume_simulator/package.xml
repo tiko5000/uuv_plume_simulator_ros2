@@ -13,7 +13,8 @@
 
   <license>Apache-2.0</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
+  <!-- https://github.com/ros2/ros2_documentation/issues/508 -->
+  <!-- <buildtool_depend>ament_python</buildtool_depend> -->
 
   <depend>rclpy</depend>
 
