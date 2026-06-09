@@ -518,7 +518,7 @@ class PlumeSimulatorServer(Node):
                                         msg.y,
                                         msg.z])
 
-    def delete_plume(self, request):
+    def delete_plume(self, request, response):
         """
         Service function callback to delete the plume model. All markers and
         point cloud will be published with empty topics.
@@ -527,130 +527,150 @@ class PlumeSimulatorServer(Node):
             del self._model
         self._model = None
         self.get_logger().info('Plume deleted')
-        return DeletePlumeResponse(True)
+        response.success = True
+        return response
 
-    def set_plume_source_position(self, request):
+    def set_plume_source_position(self, request, response):
         """
         Service function callback that sets a new position for the plume
         source wrt the ENU frame
         """
         if self._model is None:
             self.get_logger().warn('No plume model has been created')
-            return SetPlumeSourcePositionResponse(False)
+            response.success = False
+            return response
         else:
             self.get_logger().info('Plume source position set to:')
             self.get_logger().info('\t(X, Y, Z) [m] wrt the ENU frame: (%.2f, %.2f, %.2f)' % (request.source.x, request.source.y, request.source.z))
 
             self._model.source_pos = \
                 [request.source.x, request.source.y, request.source.z]
-            return SetPlumeSourcePositionResponse(True)
+            response.success = True
+            return response
 
-    def get_num_particles(self, request):
+    def get_num_particles(self, request, response):
         """
         Return the number of particles currently active.
         """
         if self._model is None:
             self.get_logger().warn('No plume model has been created')
-            return GetNumParticlesResponse(0)
+            response.num_particles = 0
+            return response
         else:
             self.get_logger().info('Number of plume particles requested: %d' % self._model.num_particles)
-            return GetNumParticlesResponse(int(self._model.num_particles))
+            response.num_particles = int(self._model.num_particles)
+            return response
 
-    def get_plume_source_position(self, request):
+    def get_plume_source_position(self, request, response):
         """
         Service function callback that returns the position wrt to the ENU
         frame for the plume source.
         """
         if self._model is None:
             self.get_logger().warn('No plume model has been created')
-            return GetPlumeSourcePositionResponse(Point(-1, -1, -1))
+            response.source = Point(-1, -1, -1)
+            return response
         else:
             self.get_logger().info('Current plume source position:')
             self.get_logger().info('\t(X, Y, Z) [m] wrt the ENU frame: (%.2f, %.2f, %.2f)' % (self._model.source_pos[0], self._model.source_pos[1], self._model.source_pos[2]))
 
-            return GetPlumeSourcePositionResponse(
-                Point(self._model.source_pos[0],
+            response.source = Point(self._model.source_pos[0],
                       self._model.source_pos[1],
-                      self._model.source_pos[2]))
+                      self._model.source_pos[2])
+            return response
 
-    def get_plume_configuration(self, request):
+    def get_plume_configuration(self, request, response):
         """
         Service function callback to return the configuration parameters for
         the current plume model being used.
         """
         if self._model is None:
             self.get_logger().warn('No plume model has been created')
-            return GetPlumeConfigurationResponse(
-                '',
-                0,
-                0,
-                Point(0, 0, 0),
-                0, 0, 0, 0, 0, 0)
+            response.model_name = ''
+            response.n_points = 0
+            response.max_particles_per_iter = 0
+            response.source = Point(0, 0, 0)
+            response.x_min = 0
+            response.x_max = 0
+            response.y_min = 0
+            response.y_max = 0
+            response.z_min = 0
+            response.z_max = 0
+            return response
+            
         else:
-            return GetPlumeConfigurationResponse(
-                self._model.LABEL,
-                self._model.n_points,
-                (0 if self._model.LABEL == 'spheroid' else \
-                    self._model.max_particles_per_iter),
-                Point(self._model.source_pos[0],
-                      self._model.source_pos[1],
-                      self._model.source_pos[2]),
-                self._model.x_lim[0],
-                self._model.x_lim[1],
-                self._model.y_lim[0],
-                self._model.y_lim[1],
-                self._model.z_lim[0],
-                self._model.z_lim[1])
 
-    def set_plume_configuration(self, request):
+            response.model_name = self._model.LABEL,
+            response.max_particles_per_iter = self._model.n_points,
+            response.n_points = (0 if self._model.LABEL == 'spheroid' else self._model.max_particles_per_iter),
+            response.source = Point(self._model.source_pos[0], self._model.source_pos[1], self._model.source_pos[2]),
+            response.x_min = self._model.x_lim[0],
+            response.x_max = self._model.x_lim[1],
+            response.y_min = self._model.y_lim[0],
+            response.y_max = self._model.y_lim[1],
+            response.z_min = self._model.z_lim[0],
+            response.z_max = self._model.z_lim[1]
+            return response            
+
+    def set_plume_configuration(self, request, response):
         """
         Service function callback to set general plume configuration parameters.
         """
         if self._model is None:
             self.get_logger().warn('No plume model has been created')
-            return SetPlumeConfigurationResponse(False)
+            response.success = False
+            return response
         try:
             if not self._model.set_n_points(request.n_points):
-                return SetPlumeConfigurationRequest(False)
+                response.success = False
+                return response
 
             self.get_logger().info('Change in the plume configuration:')
-            self.get_logger().info('\t- # particles=%d' % request.n_points)
+            self.get_logger().info(f'\t- # particles={request.n_points}')
 
             if request.max_particles_per_iter > 0 and self._model.LABEL == 'passive_scalar_turbulence':
                 if not self._model.set_max_particles_per_iter(request.max_particles_per_iter):
                     self.get_logger().error(f'Error ocurred while setting the maximum number of particles per iteration, value={int(request.max_particles_per_iter)}')
-                    return SetPlumeConfigurationRequest(False)
-                self.get_logger().info('\t- Max. number of particles per iteration=%d', request.max_particles_per_iter)
-            return SetPlumeConfigurationResponse(True)
+                    response.success = False
+                    return response
+                self.get_logger().info(f'\t- Max. number of particles per iteration={request.max_particles_per_iter}')
+            response.success = True
+            return response            
         except Exception as e:
             self.get_logger().error(f'Error setting the plume configuration, message={str(e)}')
-            return SetPlumeConfigurationResponse(False)
+            response.success = False
+            return response            
 
-    def set_plume_limits(self, request):
+    def set_plume_limits(self, request, response):
         """
         Service function callback to set the plume bounding box limits.
         """
         if self._model is None:
-            self.get_logger().warn('No plume model has been created')
-            return SetPlumeLimitsResponse(False)
+            self.get_logger().warn('No plume model has been created')            
+            response.success = False
+            return response            
 
         try:
             self._model.set_x_lim(request.x_min, request.x_max)
             self._model.set_y_lim(request.y_min, request.y_max)
             self._model.set_z_lim(request.z_min, request.z_max)
-            return SetPlumeLimitsResponse(True)
+            response.success = True
+            return response            
         except Exception as e:
             self.get_logger().error(f'Error setting the plume limits, message={str(e)}')
-            return SetPlumeLimitsResponse(False)
+            return response
+            response.success = False            
 
-    def create_spheroid_plume(self, request):
+    def create_spheroid_plume(self, request, response):
         """
         Service function callback to create a static spheroid plume model.
         """
         if request.a <= 0 or request.c <= 0:
-            return CreateSpheroidPlumeResponse(False)
+            response.success = False
+            return response            
         if request.n_points <= 0:
-            return CreateSpheroidPlumeResponse(False)
+            response.success = False
+            return response        
 
         try:
             q = np.array([request.orientation.x,
@@ -671,11 +691,13 @@ class PlumeSimulatorServer(Node):
             self._model.set_z_lim(request.z_min, request.z_max)
             self.get_logger().info('Spheroid plume created!')
             self.get_logger().info(request)
-            return CreateSpheroidPlumeResponse(True)
+            response.success = True
+            return response            
         except Exception as e:
             self.get_logger().error(f'Error creating spheroid plume model, message={str(e)}')
             self._model = None
-            return CreateSpheroidPlumeResponse(False)
+            response.success = False
+            return response            
 
     def create_passive_scalar_turbulent_plume(self, request, response):
         """
@@ -715,19 +737,19 @@ class PlumeSimulatorServer(Node):
             response.success = True
             return response
 
-            # return CreatePassiveScalarTurbulentPlumeResponse(True)
         except Exception as e:
             self.get_logger().error(f'Error creating passive turbulent plume model, message={str(e)}')
             self._model = None
             response.success = False
             return response
-            # return CreatePassiveScalarTurbulentPlumeResponse(False)
 
-    def store_plume_state(self, request):
+    def store_plume_state(self, request, response):
         self.get_logger().info('Store plume state service called')
         if self._model is None:
             self.get_logger().error('No plume model available!')
-            return StorePlumeStateResponse(False, '')
+            response.success = False
+            response.plume_file = ''
+            return response            
         output_dir = '/tmp'
         if os.path.isdir(request.output_dir):
             output_dir = request.output_dir
@@ -745,35 +767,43 @@ class PlumeSimulatorServer(Node):
         with open(abs_filename, 'w') as yaml_file:
             yaml_file.write(yaml.safe_dump(data))
 
-        self.get_logger().info('Plume particles stored in=%s', abs_filename)
-        return StorePlumeStateResponse(True, abs_filename)
+        self.get_logger().info(f'Plume particles stored in={abs_filename}')
+        response.success = True
+        response.plume_file = abs_filename
+        return response
 
-    def load_plume_particles(self, request):
+    def load_plume_particles(self, request, response):
         self.get_logger().info('Load plume particles service called')
         if self._model is None:
             self.get_logger().error('No plume model available!')
-            return LoadPlumeParticlesResponse(False)
+            response.success = False
+            return response            
 
         if not os.path.isfile(request.plume_file):
             self.get_logger().error(f'Plume file provided is invalid, filename={request.plume_file}')
-            return LoadPlumeParticlesResponse(False)
+            response.success = False
+            return response            
         self._loading_plume.acquire()
         try:
             with open(request.plume_file, 'r') as plume_file:
-                plume_particles = yaml.load(plume_file)
-            self.get_logger().info('# particles loaded=%d', len(plume_particles['x']))
+                plume_particles = yaml.safe_load(plume_file)
+            particles_count = len(plume_particles['x'])
+            message = f'# particles loaded={particles_count}'
+            self.get_logger().info(message)
             self._model.set_plume_particles(
-                float(self.get_clock().now().to_msg().nanoseconds)/1000000000,
+                float(self.get_clock().now().nanoseconds)/1000000000,
                 plume_particles['x'],
                 plume_particles['y'],
                 plume_particles['z'],
                 plume_particles['time_creation'])
         except Exception as e:
-            self.get_logger().error(f'Error while loading plume file, message={str(e)}')
-            return LoadPlumeParticlesResponse(False)
+            self.get_logger().error(f'Error while loading plume file, message={str(e)}')            
+            response.success = False
+            return response            
 
         self._loading_plume.release()
-        return LoadPlumeParticlesResponse(True)
+        response.success = True
+        return response        
 
     def update_plume(self):
         """
