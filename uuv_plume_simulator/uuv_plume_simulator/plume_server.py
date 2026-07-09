@@ -266,6 +266,8 @@ import numpy as np
 from uuv_plume_msgs.srv import *
 import os
 import yaml
+import xml.etree.ElementTree as ET
+from tf2_ros import Buffer, TransformListener, TransformException
 
 import rclpy
 from rclpy.node import Node
@@ -325,6 +327,19 @@ class PlumeSimulatorServer(Node):
         self._publish_salinity = True
         self._pointcloud_frame_id = 'world'
         self._sensor_frame_id = 'base_link'
+        self._enable_vehicle_dispersion = False
+        self._vehicle_frame_id = 'base_link'
+        self._vehicle_bbox_size_x = 0.0
+        self._vehicle_bbox_size_y = 0.0
+        self._vehicle_bbox_size_z = 0.0
+        self._vehicle_collision_urdf_path = ''
+        self._vehicle_wake_downstream_push_m = 0.7
+        self._vehicle_wake_sideways_push_m = 0.4
+        self._vehicle_wake_vertical_push_m = 0.0
+        self._vehicle_wake_noise_std_m = 0.05
+
+        self._last_vehicle_center_world = None
+        self._last_vehicle_center_time = None
 
         # Declare parameters
         self._update_rate = float(self.declare_parameter('update_rate', self._update_rate).value)
@@ -344,6 +359,16 @@ class PlumeSimulatorServer(Node):
         self._publish_salinity = bool(self.declare_parameter('publish_salinity', self._publish_salinity).value)
         self._pointcloud_frame_id = str(self.declare_parameter('pointcloud_frame_id', self._pointcloud_frame_id).value)
         self._sensor_frame_id = str(self.declare_parameter('sensor_frame_id', self._sensor_frame_id).value)
+        self._enable_vehicle_dispersion = bool(self.declare_parameter('enable_vehicle_dispersion', self._enable_vehicle_dispersion).value)
+        self._vehicle_frame_id = str(self.declare_parameter('vehicle_frame_id', self._vehicle_frame_id).value)
+        self._vehicle_bbox_size_x = float(self.declare_parameter('vehicle_bbox_size_x', self._vehicle_bbox_size_x).value)
+        self._vehicle_bbox_size_y = float(self.declare_parameter('vehicle_bbox_size_y', self._vehicle_bbox_size_y).value)
+        self._vehicle_bbox_size_z = float(self.declare_parameter('vehicle_bbox_size_z', self._vehicle_bbox_size_z).value)
+        self._vehicle_collision_urdf_path = str(self.declare_parameter('vehicle_collision_urdf_path', self._vehicle_collision_urdf_path).value)
+        self._vehicle_wake_downstream_push_m = float(self.declare_parameter('vehicle_wake_downstream_push_m', self._vehicle_wake_downstream_push_m).value)
+        self._vehicle_wake_sideways_push_m = float(self.declare_parameter('vehicle_wake_sideways_push_m', self._vehicle_wake_sideways_push_m).value)
+        self._vehicle_wake_vertical_push_m = float(self.declare_parameter('vehicle_wake_vertical_push_m', self._vehicle_wake_vertical_push_m).value)
+        self._vehicle_wake_noise_std_m = float(self.declare_parameter('vehicle_wake_noise_std_m', self._vehicle_wake_noise_std_m).value)
 
         # Assert the delcared parameters
         assert isinstance(self._update_rate, float), 'port parameter must be a float'
@@ -363,6 +388,16 @@ class PlumeSimulatorServer(Node):
         assert isinstance(self._publish_salinity, bool), 'port parameter must be a float'
         assert isinstance(self._pointcloud_frame_id, str), 'frame_id parameter must be a string'
         assert isinstance(self._sensor_frame_id, str), 'sensor_frame_id parameter must be a string'
+        assert isinstance(self._enable_vehicle_dispersion, bool), 'enable_vehicle_dispersion must be a boolean'
+        assert isinstance(self._vehicle_frame_id, str), 'vehicle_frame_id must be a string'
+        assert isinstance(self._vehicle_bbox_size_x, float), 'vehicle_bbox_size_x must be a float'
+        assert isinstance(self._vehicle_bbox_size_y, float), 'vehicle_bbox_size_y must be a float'
+        assert isinstance(self._vehicle_bbox_size_z, float), 'vehicle_bbox_size_z must be a float'
+        assert isinstance(self._vehicle_collision_urdf_path, str), 'vehicle_collision_urdf_path must be a string'
+        assert isinstance(self._vehicle_wake_downstream_push_m, float), 'vehicle_wake_downstream_push_m must be a float'
+        assert isinstance(self._vehicle_wake_sideways_push_m, float), 'vehicle_wake_sideways_push_m must be a float'
+        assert isinstance(self._vehicle_wake_vertical_push_m, float), 'vehicle_wake_vertical_push_m must be a float'
+        assert isinstance(self._vehicle_wake_noise_std_m, float), 'vehicle_wake_noise_std_m must be a float'
 
         # Log the parameters
         self._update_rate = max(0.05, self._update_rate)
@@ -383,6 +418,25 @@ class PlumeSimulatorServer(Node):
         self.get_logger().info(f'Publish Salinity [Boolean]: {self._publish_salinity}')
         self.get_logger().info(f'Pointcloud Frame ID: {self._pointcloud_frame_id}')
         self.get_logger().info(f'Sensor Frame ID: {self._sensor_frame_id}')
+        self.get_logger().info(f'Enable Vehicle Dispersion [Boolean]: {self._enable_vehicle_dispersion}')
+        self.get_logger().info(f'Vehicle Frame ID: {self._vehicle_frame_id}')
+        self.get_logger().info(f'Wake push downstream [m]: {format(self._vehicle_wake_downstream_push_m, ".3f")}')
+        self.get_logger().info(f'Wake push sideways [m]: {format(self._vehicle_wake_sideways_push_m, ".3f")}')
+        self.get_logger().info(f'Wake push vertical [m]: {format(self._vehicle_wake_vertical_push_m, ".3f")}')
+        self.get_logger().info(f'Wake noise std [m]: {format(self._vehicle_wake_noise_std_m, ".3f")}')
+
+        # TF listener for vehicle-frame based plume particle filtering.
+        self._tf_buffer = Buffer()
+        self._tf_listener = TransformListener(self._tf_buffer, self)
+
+        self._vehicle_half_extents = np.array([
+            self._vehicle_bbox_size_x / 2.0,
+            self._vehicle_bbox_size_y / 2.0,
+            self._vehicle_bbox_size_z / 2.0,
+        ], dtype=float)
+
+        if self._enable_vehicle_dispersion:
+            self._configure_vehicle_dispersion()
 
         # Definition of service callbacks
         # self._services = dict()
@@ -517,6 +571,150 @@ class PlumeSimulatorServer(Node):
         self._model.update_current_vel([msg.x,
                                         msg.y,
                                         msg.z])
+
+    def _configure_vehicle_dispersion(self):
+        """Resolve dispersion geometry from params or URDF collision box."""
+        if np.any(self._vehicle_half_extents <= 0.0):
+            if self._vehicle_collision_urdf_path:
+                urdf_sizes = self._get_collision_box_size_from_urdf(self._vehicle_collision_urdf_path)
+                if urdf_sizes is not None:
+                    self._vehicle_half_extents = np.array(urdf_sizes, dtype=float) / 2.0
+
+        if np.any(self._vehicle_half_extents <= 0.0):
+            self.get_logger().warn(
+                'Vehicle dispersion enabled, but no valid box size found. '
+                'Set vehicle_bbox_size_{x,y,z} or provide vehicle_collision_urdf_path with a <collision><geometry><box .../> for the target link.')
+            self._enable_vehicle_dispersion = False
+            return
+
+        self.get_logger().info(
+            'Vehicle dispersion box half extents [m]: (%.3f, %.3f, %.3f)' % (
+                self._vehicle_half_extents[0],
+                self._vehicle_half_extents[1],
+                self._vehicle_half_extents[2]))
+
+    def _get_collision_box_size_from_urdf(self, urdf_path):
+        if not os.path.isfile(urdf_path):
+            self.get_logger().warn(f'URDF path does not exist: {urdf_path}')
+            return None
+
+        try:
+            tree = ET.parse(urdf_path)
+            root = tree.getroot()
+            link_name = self._vehicle_frame_id.split('/')[-1]
+
+            for link in root.findall('link'):
+                if link.attrib.get('name') != link_name:
+                    continue
+                for collision in link.findall('collision'):
+                    geometry = collision.find('geometry')
+                    if geometry is None:
+                        continue
+                    box = geometry.find('box')
+                    if box is None:
+                        continue
+                    size_attr = box.attrib.get('size', '')
+                    size_vals = [float(val) for val in size_attr.split()]
+                    if len(size_vals) == 3 and all(v > 0 for v in size_vals):
+                        self.get_logger().info(
+                            f'Loaded vehicle collision box from URDF link={link_name}, size={size_vals}')
+                        return size_vals
+
+            self.get_logger().warn(
+                f'No collision box found for link={link_name} in URDF: {urdf_path}')
+            return None
+        except Exception as exc:
+            self.get_logger().warn(f'Failed to parse URDF for collision box: {str(exc)}')
+            return None
+
+    @staticmethod
+    def _quat_to_rot_matrix(quat):
+        x = quat.x
+        y = quat.y
+        z = quat.z
+        w = quat.w
+        return np.array([
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ], dtype=float)
+
+    def _remove_particles_inside_vehicle(self):
+        if (not self._enable_vehicle_dispersion) or self._model is None or self._model.points is None:
+            return
+
+        try:
+            transform = self._tf_buffer.lookup_transform(
+                self._pointcloud_frame_id,
+                self._vehicle_frame_id,
+                rclpy.time.Time(),
+            )
+        except TransformException as exc:
+            self.get_logger().debug(f'Could not get vehicle transform for dispersion: {str(exc)}')
+            return
+
+        translation = transform.transform.translation
+        rotation = transform.transform.rotation
+
+        center_world = np.array([translation.x, translation.y, translation.z], dtype=float)
+        rot_world_from_vehicle = self._quat_to_rot_matrix(rotation)
+        forward_axis_world = rot_world_from_vehicle[:, 0]
+
+        points_world = self._model.points
+        points_vehicle = (points_world - center_world) @ rot_world_from_vehicle
+
+        inside = np.logical_and.reduce([
+            np.abs(points_vehicle[:, 0]) <= self._vehicle_half_extents[0],
+            np.abs(points_vehicle[:, 1]) <= self._vehicle_half_extents[1],
+            np.abs(points_vehicle[:, 2]) <= self._vehicle_half_extents[2],
+        ])
+
+        n_inside = int(np.count_nonzero(inside))
+        if n_inside == 0:
+            self._last_vehicle_center_world = center_world
+            self._last_vehicle_center_time = float(self.get_clock().now().nanoseconds) / 1000000000.0
+            return
+
+        now_t = float(self.get_clock().now().nanoseconds) / 1000000000.0
+        downstream_dir_world = forward_axis_world
+        if self._last_vehicle_center_world is not None and self._last_vehicle_center_time is not None:
+            dt = now_t - self._last_vehicle_center_time
+            if dt > 1e-4:
+                vel_world = (center_world - self._last_vehicle_center_world) / dt
+                speed = np.linalg.norm(vel_world)
+                if speed > 1e-3:
+                    downstream_dir_world = vel_world / speed
+
+        downstream_dir_world = downstream_dir_world / max(np.linalg.norm(downstream_dir_world), 1e-9)
+        world_up = np.array([0.0, 0.0, 1.0], dtype=float)
+        sideways_dir_world = np.cross(world_up, downstream_dir_world)
+        if np.linalg.norm(sideways_dir_world) < 1e-6:
+            sideways_dir_world = rot_world_from_vehicle[:, 1]
+        sideways_dir_world = sideways_dir_world / max(np.linalg.norm(sideways_dir_world), 1e-9)
+
+        idx_inside = np.nonzero(inside)[0]
+        rel = points_world[idx_inside, :] - center_world
+        side_sign = np.sign(rel @ sideways_dir_world)
+        side_sign[side_sign == 0.0] = 1.0
+
+        displacements = (
+            np.outer(np.ones(n_inside), downstream_dir_world) * self._vehicle_wake_downstream_push_m
+            + np.outer(side_sign, sideways_dir_world) * self._vehicle_wake_sideways_push_m
+            + np.outer(np.ones(n_inside), world_up) * self._vehicle_wake_vertical_push_m
+        )
+
+        if self._vehicle_wake_noise_std_m > 0.0:
+            displacements += np.random.normal(
+                loc=0.0,
+                scale=self._vehicle_wake_noise_std_m,
+                size=(n_inside, 3),
+            )
+
+        self._model._pnts[idx_inside, :] = self._model._pnts[idx_inside, :] + displacements
+        self.get_logger().debug(f'Applied wake-like perturbation to {n_inside} plume particles inside vehicle volume')
+
+        self._last_vehicle_center_world = center_world
+        self._last_vehicle_center_time = now_t
 
     def delete_plume(self, request, response):
         """
@@ -837,6 +1035,8 @@ class PlumeSimulatorServer(Node):
             self.get_logger().error('Error while updating the plume particles positions')
             self._loading_plume.release()
             return True
+
+        self._remove_particles_inside_vehicle()
 
         marker = self._model.get_markers(stamp=now_msg)
 
