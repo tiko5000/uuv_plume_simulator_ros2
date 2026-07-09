@@ -76,6 +76,36 @@ def generate_launch_description():
     sensor_frame_id = LaunchConfiguration('sensor_frame_id')
     sensor_frame_id_launch_arg = DeclareLaunchArgument('sensor_frame_id', default_value='base_link')
 
+    enable_vehicle_dispersion = LaunchConfiguration('enable_vehicle_dispersion')
+    enable_vehicle_dispersion_launch_arg = DeclareLaunchArgument('enable_vehicle_dispersion', default_value='false')
+
+    vehicle_frame_id = LaunchConfiguration('vehicle_frame_id')
+    vehicle_frame_id_launch_arg = DeclareLaunchArgument('vehicle_frame_id', default_value='base_link')
+
+    vehicle_bbox_size_x = LaunchConfiguration('vehicle_bbox_size_x')
+    vehicle_bbox_size_x_launch_arg = DeclareLaunchArgument('vehicle_bbox_size_x', default_value='0.0')
+
+    vehicle_bbox_size_y = LaunchConfiguration('vehicle_bbox_size_y')
+    vehicle_bbox_size_y_launch_arg = DeclareLaunchArgument('vehicle_bbox_size_y', default_value='0.0')
+
+    vehicle_bbox_size_z = LaunchConfiguration('vehicle_bbox_size_z')
+    vehicle_bbox_size_z_launch_arg = DeclareLaunchArgument('vehicle_bbox_size_z', default_value='0.0')
+
+    vehicle_collision_urdf_path = LaunchConfiguration('vehicle_collision_urdf_path')
+    vehicle_collision_urdf_path_launch_arg = DeclareLaunchArgument('vehicle_collision_urdf_path', default_value='')
+
+    vehicle_wake_downstream_push_m = LaunchConfiguration('vehicle_wake_downstream_push_m')
+    vehicle_wake_downstream_push_m_launch_arg = DeclareLaunchArgument('vehicle_wake_downstream_push_m', default_value='0.7')
+
+    vehicle_wake_sideways_push_m = LaunchConfiguration('vehicle_wake_sideways_push_m')
+    vehicle_wake_sideways_push_m_launch_arg = DeclareLaunchArgument('vehicle_wake_sideways_push_m', default_value='0.4')
+
+    vehicle_wake_vertical_push_m = LaunchConfiguration('vehicle_wake_vertical_push_m')
+    vehicle_wake_vertical_push_m_launch_arg = DeclareLaunchArgument('vehicle_wake_vertical_push_m', default_value='0.0')
+
+    vehicle_wake_noise_std_m = LaunchConfiguration('vehicle_wake_noise_std_m')
+    vehicle_wake_noise_std_m_launch_arg = DeclareLaunchArgument('vehicle_wake_noise_std_m', default_value='0.05')
+
     return LaunchDescription([
         update_rate_launch_arg,
         gamma_launch_arg,
@@ -94,6 +124,16 @@ def generate_launch_description():
         publish_salinity_launch_arg,
         pointcloud_frame_id_launch_arg,
         sensor_frame_id_launch_arg,
+        enable_vehicle_dispersion_launch_arg,
+        vehicle_frame_id_launch_arg,
+        vehicle_bbox_size_x_launch_arg,
+        vehicle_bbox_size_y_launch_arg,
+        vehicle_bbox_size_z_launch_arg,
+        vehicle_collision_urdf_path_launch_arg,
+        vehicle_wake_downstream_push_m_launch_arg,
+        vehicle_wake_sideways_push_m_launch_arg,
+        vehicle_wake_vertical_push_m_launch_arg,
+        vehicle_wake_noise_std_m_launch_arg,
         Node(
             package="uuv_plume_simulator",
             executable="plume_server",
@@ -118,7 +158,17 @@ def generate_launch_description():
                     "use_gps": use_gps,
                     "publish_salinity": publish_salinity,
                     "pointcloud_frame_id": pointcloud_frame_id,
-                    "sensor_frame_id": sensor_frame_id}
+                    "sensor_frame_id": sensor_frame_id,
+                    "enable_vehicle_dispersion": enable_vehicle_dispersion,
+                    "vehicle_frame_id": vehicle_frame_id,
+                    "vehicle_bbox_size_x": vehicle_bbox_size_x,
+                    "vehicle_bbox_size_y": vehicle_bbox_size_y,
+                    "vehicle_bbox_size_z": vehicle_bbox_size_z,
+                    "vehicle_collision_urdf_path": vehicle_collision_urdf_path,
+                    "vehicle_wake_downstream_push_m": vehicle_wake_downstream_push_m,
+                    "vehicle_wake_sideways_push_m": vehicle_wake_sideways_push_m,
+                    "vehicle_wake_vertical_push_m": vehicle_wake_vertical_push_m,
+                    "vehicle_wake_noise_std_m": vehicle_wake_noise_std_m}
             ]
         )
     ])
